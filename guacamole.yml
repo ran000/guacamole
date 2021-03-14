@@ -81,17 +81,17 @@
 
     - name: Container Launch - docker
       shell: |
-        {{ container_command }} run -d --name guacd --network guacnet --ip {{ guacnet_guacd }} -d guacamole/guacd
-        {{ container_command }} run -d --name guacdb --network guacnet --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} -d mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --network guacnet --ip {{ guacnet_guacamole }} --link guacd:guacd --link guacdb:mysql -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -d -p 8080:8080 guacamole/guacamole
+        {{ container_command }} run -d --name guacd --network guacnet --ip {{ guacnet_guacd }} -d docker.io/guacamole/guacd
+        {{ container_command }} run -d --name guacdb --network guacnet --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} -d docker.io/mysql/mysql-server
+        {{ container_command }} run -d --name guacamole --network guacnet --ip {{ guacnet_guacamole }} --link guacd:guacd --link guacdb:mysql -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -d -p 8080:8080 docker.io/guacamole/guacamole
       when:
         - container_command == 'docker'
 
     - name: Container Launch - podman
       shell: |
-        {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} guacamole/guacd
-        {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -p 8080:8080 guacamole/guacamole
+        {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd
+        {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
+        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -p 8080:8080 docker.io/guacamole/guacamole
       when:
         - container_command == 'podman'
 
