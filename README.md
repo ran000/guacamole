@@ -7,7 +7,7 @@ Creates an (all-in-one) guacamole server using docker (or podman) w/ mysql for a
 ansible-playbook guacamole.yml --extra-vars="target=localhost guacnet_cidr=192.168.5.0/24 guacnet_guacd=192.168.5.2 guacnet_guacdb=192.168.5.3 guacnet_guacamole=192.168.5.4"
 
 # local example (RHEL8)
-ansible-playbook guacamole.yml --extra-vars="target=localhost guacnet_guacd=10.88.0.2 guacnet_guacdb=10.88.0.3 guacnet_guacamole=10.88.0.4"
+ansible-playbook guacamole.yml --extra-vars="target=localhost guacnet_guacd=10.88.0.2 guacnet_guacdb=10.88.0.3 guacnet_guacamole=10.88.0.4 guacnet_nginx=10.88.0.5"
 ```
 
 # Notes

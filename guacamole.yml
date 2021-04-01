@@ -21,6 +21,7 @@
       package:
         name: "{% if ansible_os_family == 'RedHat' %}{{ container_command }}{% elif ansible_os_family == 'Debian' %}docker.io{% endif %}"
         state: present
+      when: false
 
     - name: Docker Service
       systemd:
@@ -68,9 +69,15 @@
         cat /opt/guacamole/guacdb_guacamole_file
       register: guacdb_guacamole_pass
 
+    - name: Determine if (One Time) was done
+      stat:
+        path: /opt/guacamole/one_time_done
+      register: guacdb_one_time_done
+
     - name: Docker Volume (db)
       shell: |
         {{ container_command }} volume create guacdb
+      when: guacdb_one_time_done.stat.exists|bool == False
 
     - name: Docker Network - docker 
       shell: |
@@ -91,14 +98,11 @@
       shell: |
         {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd
         {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -p 8080:8080 docker.io/guacamole/guacamole
+        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug  docker.io/guacamole/guacamole
+        {{ container_command }} run -d  --name nginx --ip {{ guacnet_nginx }} -p 443:443 -v /opt/nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:Z -v /opt/nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:Z -v /opt/nginx/nginx.conf:/etc/nginx/nginx.conf:Z -v /opt/nginx/mysite.template:/etc/nginx/conf.d/default.conf:Z  docker.io/library/nginx
       when:
         - container_command == 'podman'
 
-    - name: Determine if (One Time) was done
-      stat:
-        path: /opt/guacamole/one_time_done
-      register: guacdb_one_time_done
 
     - name: Set my.cnf and dbpass.sql
       template:
