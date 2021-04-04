@@ -1,0 +1,44 @@
+---
+- name: guacamole
+  hosts: "{{ target }}"
+  gather_facts: true
+  become: true
+  tasks:
+
+    - name: Set container_command = podman for rhel8
+      set_fact:
+        container_command: podman
+      when:
+        - ansible_os_family == 'RedHat' and ansible_distribution_major_version == "8"
+
+    - name: Guacamole data dir
+      file:
+        path: /opt/guacamole
+        state: absent
+    
+    - name: Guacamole data dir
+      file:
+        path: /opt/nginx
+        state: absent
+      
+    - name: Container Stop - podman
+      shell: |
+        {{ container_command }} stop guacd 
+        {{ container_command }} stop guacdb 
+        {{ container_command }} stop guacamole 
+        {{ container_command }} stop nginx 
+      ignore_errors: true
+
+    - name: Container Remove - podman
+      shell: |
+        {{ container_command }} rm guacd 
+        {{ container_command }} rm guacdb 
+        {{ container_command }} rm guacamole 
+        {{ container_command }} rm nginx 
+      ignore_errors: true
+
+    - name: Docker Volume (db)
+      shell: |
+        {{ container_command }} volume rm guacdb
+      ignore_errors: true
+
