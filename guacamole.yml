@@ -5,31 +5,35 @@
   become: true
   tasks:
 
-    - name: Set container_command = docker for rhel7/debian
-      set_fact:
-        container_command: docker
-      when:
-        - (ansible_os_family == 'RedHat' and ansible_distribution_major_version == "7") or ansible_os_family == 'Debian'
-
     - name: Set container_command = podman for rhel8
       set_fact:
         container_command: podman
       when:
         - ansible_os_family == 'RedHat' and ansible_distribution_major_version == "8"
-
-    - name: Docker/Podman Installation
-      package:
-        name: "{% if ansible_os_family == 'RedHat' %}{{ container_command }}{% elif ansible_os_family == 'Debian' %}docker.io{% endif %}"
-        state: present
-      when: false
-
-    - name: Docker Service
-      systemd:
-        name: docker
-        state: started
-        enabled: True
-      when:
-        - (ansible_os_family == 'RedHat' and ansible_distribution_major_version == "7") or ansible_os_family == 'Debian'
+    
+    - name: Determine if (One Time) was done
+      stat:
+        path: /opt/guacamole/one_time_done
+      register: guacdb_one_time_done
+    
+    - name: Nginx data dir
+      file:
+        path: /opt/nginx/ssl
+        state: directory
+        owner: root
+        group: root
+        mode: '0750'
+ 
+    - name: Nginx config files
+      copy:
+        src: nginx/
+        dest: /opt/nginx/
+    
+    - name: Configure Nginx SSL cert (One Time)
+      shell: 
+        # credentials
+        "openssl req -nodes -newkey rsa:2048 -new -x509 -keyout /opt/nginx/ssl/self-ssl.key -out /opt/nginx/ssl/self.cert -subj '/C=RU/ST=St.Petersburg/L=St.Petersburg/O=UNIX Education Center/OU=Training/CN=foundation0.ilt.example.com/emailAddress=instructor@ilt.example.com'"
+      when: guacdb_one_time_done.stat.exists|bool == False
 
     - name: Guacamole data dir
       file:
@@ -69,37 +73,19 @@
         cat /opt/guacamole/guacdb_guacamole_file
       register: guacdb_guacamole_pass
 
-    - name: Determine if (One Time) was done
-      stat:
-        path: /opt/guacamole/one_time_done
-      register: guacdb_one_time_done
 
     - name: Docker Volume (db)
       shell: |
         {{ container_command }} volume create guacdb
       when: guacdb_one_time_done.stat.exists|bool == False
-
-    - name: Docker Network - docker 
-      shell: |
-        {{ container_command }} network create --driver bridge --subnet={{ guacnet_cidr }} guacnet
-      ignore_errors: True
-      when:
-        - container_command == 'docker'
-
-    - name: Container Launch - docker
-      shell: |
-        {{ container_command }} run -d --name guacd --network guacnet --ip {{ guacnet_guacd }} -d docker.io/guacamole/guacd
-        {{ container_command }} run -d --name guacdb --network guacnet --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} -d docker.io/mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --network guacnet --ip {{ guacnet_guacamole }} --link guacd:guacd --link guacdb:mysql -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -d -p 8080:8080 docker.io/guacamole/guacamole
-      when:
-        - container_command == 'docker'
-
+      ignore_errors: true
+      
     - name: Container Launch - podman
       shell: |
         {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd
         {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
         {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug  docker.io/guacamole/guacamole
-        {{ container_command }} run -d  --name nginx --ip {{ guacnet_nginx }} -p 443:443 -v /opt/nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:Z -v /opt/nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:Z -v /opt/nginx/nginx.conf:/etc/nginx/nginx.conf:Z -v /opt/nginx/mysite.template:/etc/nginx/conf.d/default.conf:Z  docker.io/library/nginx
+        {{ container_command }} run -d  --name nginx --ip {{ guacnet_nginx }} -p 8443:443 -v /opt/nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:Z -v /opt/nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:Z -v /opt/nginx/nginx.conf:/etc/nginx/nginx.conf:Z -v /opt/nginx/mysite.template:/etc/nginx/conf.d/default.conf:Z  docker.io/library/nginx
       when:
         - container_command == 'podman'
 
