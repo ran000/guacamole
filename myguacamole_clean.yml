@@ -2,7 +2,6 @@
 - name: guacamole
   hosts: "{{ target }}"
   gather_facts: true
-  become: true
   tasks:
 
     - name: Set container_command = podman for rhel8
@@ -13,17 +12,17 @@
 
     - name: Guacamole data dir
       file:
-        path: /opt/guacamole
+        path: /var/local/guacdb
         state: absent
     
     - name: Guacamole data dir
       file:
-        path: /opt/nginx
+        path: /var/local/nginx
         state: absent
       
     - name: Guacamole data dir
       file:
-        path: /opt/guac
+        path: /var/local/guac
         state: absent
 
     - name: Container Stop - podman
@@ -42,8 +41,8 @@
         {{ container_command }} rm nginx 
       ignore_errors: true
 
-    - name: Docker Volume (db)
+    - name: Docker Pod(db)
       shell: |
-        {{ container_command }} volume rm guacdb
+        {{ container_command }} pod rm guac
       ignore_errors: true
 
