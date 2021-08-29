@@ -50,11 +50,11 @@
         owner: root
         group: root
         mode: '0750'
+
     - name: Guacamole branding file
       copy:
         src: branding.jar
         dest: /opt/guac/extensions/branding.jar
-
 
     - name: Determine db passwords set (root)
       stat:
