@@ -9,7 +9,7 @@
       set_fact:
         container_command: podman
       when:
-        - ansible_os_family == 'RedHat' and ansible_distribution_major_version == "8"
+        - ansible_os_family == 'RedHat' and ansible_distribution_major_version == "9"
 
     - name: Container Stop - podman
       shell: |
