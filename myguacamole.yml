@@ -68,9 +68,9 @@
 
     - name: Container Launch - podman
       shell: |
-        {{ container_command }} run -d --name guacd --pod guacpod docker.io/guacamole/guacd
+        {{ container_command }} run -d --name guacd --pod guacpod docker.io/guacamole/guacd:1.4.0
         {{ container_command }} run -d --name guacdb --pod guacpod --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --pod guacpod -e MYSQL_HOSTNAME=127.0.0.1 -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e MYSQL_SSL_MODE=disabled -e GUACD_HOSTNAME=127.0.0.1 -e GUACD_PORT=4822  docker.io/guacamole/guacamole
+        {{ container_command }} run -d --name guacamole --pod guacpod -e MYSQL_HOSTNAME=127.0.0.1 -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME=127.0.0.1 -e GUACD_PORT=4822  docker.io/guacamole/guacamole:1.4.0
       when:
         - container_command == 'podman'
 
