@@ -5,7 +5,7 @@
   become: true
   tasks:
 
-    - name: Set container_command = podman for rhel8
+    - name: Set container_command = podman for rhel9
       set_fact:
         container_command: podman
       when:
@@ -41,11 +41,11 @@
         state: directory
         owner: root
         group: root
-        mode: '0750'
+        mode: '0755'
     
     - name: Guacamole branding data dir
       file:
-        path: /opt/guac/extensions
+        path: /opt/guacamole/extensions
         state: directory
         owner: root
         group: root
@@ -54,7 +54,7 @@
     - name: Guacamole branding file
       copy:
         src: branding.jar
-        dest: /opt/guac/extensions/branding.jar
+        dest: /opt/guacamole/extensions/branding.jar
 
     - name: Determine db passwords set (root)
       stat:
@@ -95,10 +95,9 @@
       
     - name: Container Launch - podman
       shell: |
-        {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd
+        {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd-dev
         {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
-        # {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug  docker.io/guacamole/guacamole
-        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -e GUACAMOLE_HOME=/opt/guac -v /opt/guac:/opt/guac:Z  docker.io/guacamole/guacamole
+        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USERNAME=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -v /opt/guacamole:/etc/guacamole:Z  docker.io/guacamole/guacamole-dev
         {{ container_command }} run -d  --name nginx --ip {{ guacnet_nginx }} -p 8443:8443 -v /opt/nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:Z -v /opt/nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:Z -v /opt/nginx/nginx.conf:/etc/nginx/nginx.conf:Z -v /opt/nginx/mysite.template:/etc/nginx/conf.d/default.conf:Z  docker.io/library/nginx
       when:
         - container_command == 'podman'

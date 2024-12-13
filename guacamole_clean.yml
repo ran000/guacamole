@@ -5,7 +5,7 @@
   become: true
   tasks:
 
-    - name: Set container_command = podman for rhel8
+    - name: Set container_command = podman for rhel9
       set_fact:
         container_command: podman
       when:
@@ -21,10 +21,10 @@
         path: /opt/nginx
         state: absent
       
-    - name: Guacamole data dir
-      file:
-        path: /opt/guac
-        state: absent
+          #    - name: Guacamole data dir
+          #      file:
+          #        path: /opt/guac
+          #        state: absent
 
     - name: Container Stop - podman
       shell: |
