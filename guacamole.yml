@@ -3,6 +3,11 @@
   hosts: "{{ target }}"
   gather_facts: true
   become: true
+  vars:
+    # comment out for 1.5
+    schema_path: /opt/guacamole/extensions/guacamole-auth-jdbc/mysql/schema
+    # comment out for 1.6
+    # schema_path: /opt/guacamole/mysql/schema
   tasks:
 
     - name: Set container_command = podman for rhel9
@@ -43,6 +48,14 @@
         group: root
         mode: '0755'
     
+    - name: Guacamole lib data dir ????
+      file:
+        path: /opt/guacamole/lib
+        state: directory
+        owner: root
+        group: root
+        mode: '0777'
+
     - name: Guacamole branding data dir
       file:
         path: /opt/guacamole/extensions
@@ -97,7 +110,7 @@
       shell: |
         {{ container_command }} run -d --name guacd --ip {{ guacnet_guacd }} docker.io/guacamole/guacd
         {{ container_command }} run -d --name guacdb --ip {{ guacnet_guacdb }} --volume guacdb:/var/lib/mysql:Z -e MYSQL_ROOT_PASSWORD={{ guacdb_root_pass.stdout }} docker.io/mysql/mysql-server
-        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USERNAME=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -v /opt/guacamole:/etc/guacamole:Z  docker.io/guacamole/guacamole
+        {{ container_command }} run -d --name guacamole --ip {{ guacnet_guacamole }} -e MYSQL_HOSTNAME={{ guacnet_guacdb }} -e MYSQL_PORT=3306 -e MYSQL_DATABASE=guacamole_db -e MYSQL_USER=guacamole_user -e MYSQL_PASSWORD={{ guacdb_guacamole_pass.stdout }} -e GUACD_HOSTNAME={{ guacnet_guacd }} -e GUACD_PORT=4822 -e GUACD_LOG_LEVEL=debug -e GUACAMOLE_HOME=/etc/guacamole -v /opt/guacamole:/etc/guacamole:Z docker.io/guacamole/guacamole
         {{ container_command }} run -d  --name nginx --ip {{ guacnet_nginx }} -p 8443:8443 -v /opt/nginx/ssl/self.cert:/etc/nginx/ssl/self.cert:Z -v /opt/nginx/ssl/self-ssl.key:/etc/nginx/ssl/self-ssl.key:Z -v /opt/nginx/nginx.conf:/etc/nginx/nginx.conf:Z -v /opt/nginx/mysite.template:/etc/nginx/conf.d/default.conf:Z  docker.io/library/nginx
       when:
         - container_command == 'podman'
@@ -132,7 +145,7 @@
         {{ container_command }} exec -i guacdb /bin/bash -c "mysql < dbpass.sql"
         touch /opt/guacamole/one_time_done
         # schema
-        {{ container_command }} exec -i guacamole /bin/bash -c 'cat /opt/guacamole/mysql/schema/*.sql' > /opt/guacamole/dbschema.sql
+        {{ container_command }} exec -i guacamole /bin/bash -c 'cat {{ schema_path }}/*.sql' > /opt/guacamole/dbschema.sql
         {{ container_command }} cp /opt/guacamole/dbschema.sql guacdb:dbschema.sql
         {{ container_command }} exec -i guacdb /bin/bash -c "mysql guacamole_db < dbschema.sql"
       when: guacdb_one_time_done.stat.exists|bool == False
