@@ -6,8 +6,8 @@
 Description=Podman container-guacamole.service
 Documentation=man:podman-generate-systemd(1)
 Wants=network-online.target
-After=network-online.target container-guacd.service container-guacdb.service
-#Requires=container-guacd.service container-guacdb.service pod-pod.service
+After=network-online.target container-guacd.service container-guacdb.service pod-pod.service
+Requires=container-guacd.service container-guacdb.service pod-pod.service
 RequiresMountsFor=%t/containers
 
 [Service]
@@ -17,18 +17,18 @@ TimeoutStopSec=70
 ExecStart=/usr/bin/podman run \
 	--cidfile=%t/%n.ctr-id \
 	--cgroups=no-conmon \
-	--rm \
 	--sdnotify=conmon \
 	--replace \
 	-d \
 	--name guacamole \
-	--ip 10.88.0.4 \
-	-e MYSQL_HOSTNAME=10.88.0.3 \
+#	--ip 10.88.0.4 \
+        --pod=pod \
+	-e MYSQL_HOSTNAME=localhost \
 	-e MYSQL_PORT=3306 \
 	-e MYSQL_DATABASE=guacamole_db \
 	-e MYSQL_USER=guacamole_user \
 	-e MYSQL_PASSWORD=kaDqWRivTQQhzP9e6FNt \
-	-e GUACD_HOSTNAME=10.88.0.2 \
+	-e GUACD_HOSTNAME=localhost \
 	-e GUACD_PORT=4822 \
 	-e GUACD_LOG_LEVEL=debug \
 	-e GUACAMOLE_HOME=/etc/guacamole \

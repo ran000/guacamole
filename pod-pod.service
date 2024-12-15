@@ -19,7 +19,7 @@ ExecStartPre=/usr/bin/podman pod create \
 	--infra-conmon-pidfile %t/pod-pod.pid \
 	--pod-id-file %t/pod-pod.pod-id \
 	--exit-policy=stop \
-	--name pod \
+	--name=pod \
 	--infra-image registry.access.redhat.com/ubi8/pause:8.7-6 \
 	--publish 8443:8443 \
 	--replace

@@ -6,9 +6,9 @@
 Description=Podman container-guacdb.service
 Documentation=man:podman-generate-systemd(1)
 Wants=network-online.target
-After=network-online.target 
+After=network-online.target pod-pod.service 
 RequiresMountsFor=%t/containers
-#Requires=pod-pod.service
+Requires=pod-pod.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -22,7 +22,8 @@ ExecStart=/usr/bin/podman run \
 	--replace \
 	-d \
 	--name guacdb \
-	--ip 10.88.0.3 \
+#	--ip 10.88.0.3 \
+        --pod=pod \
 	--volume guacdb:/var/lib/mysql:Z \
 	-e MYSQL_ROOT_PASSWORD=jvcdFOBRQ874M8xku1rC docker.io/mysql/mysql-server
 ExecStop=/usr/bin/podman stop \

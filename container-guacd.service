@@ -6,9 +6,9 @@
 Description=Podman container-guacd.service
 Documentation=man:podman-generate-systemd(1)
 Wants=network-online.target
-After=network-online.target 
+After=network-online.target pod-pod.service
 RequiresMountsFor=%t/containers
-#Requires=pod-pod.service
+Requires=pod-pod.service
 
 [Service]
 Environment=PODMAN_SYSTEMD_UNIT=%n
@@ -17,12 +17,13 @@ TimeoutStopSec=70
 ExecStart=/usr/bin/podman run \
 	--cidfile=%t/%n.ctr-id \
 	--cgroups=no-conmon \
-	--rm \
 	--sdnotify=conmon \
 	--replace \
 	-d \
 	--name guacd \
-	--ip 10.88.0.2 docker.io/guacamole/guacd
+	--pod=pod \
+#        --ip 10.88.0.2 \
+        docker.io/guacamole/guacd
 ExecStop=/usr/bin/podman stop \
 	--ignore -t 10 \
 	--cidfile=%t/%n.ctr-id
