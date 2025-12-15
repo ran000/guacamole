@@ -27,6 +27,7 @@ ExecStart=/usr/bin/podman run \
 	-e MYSQL_PORT=3306 \
 	-e MYSQL_DATABASE=guacamole_db \
 	-e MYSQL_USER=guacamole_user \
+	-e MYSQL_USERNAME=guacamole_user \
 	-e MYSQL_PASSWORD=kaDqWRivTQQhzP9e6FNt \
 	-e GUACD_HOSTNAME=10.88.0.2 \
 	-e GUACD_PORT=4822 \
